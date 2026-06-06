@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget id="com.driverflux.app" version="1.0.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>DriverFlux</name>
+    <description>Sistema de Gestão de Corridas e Frota de Táxi</description>
+    <access origin="*" />
+    <allow-navigation href="https://*/*" />
+    
+    <!-- Permissões para GPS e Localização -->
+    <permission name="ACCESS_FINE_LOCATION" />
+    <permission name="ACCESS_COARSE_LOCATION" />
+    
+    <!-- Plugin de Geolocalização -->
+    <plugin name="cordova-plugin-geolocation" spec="^4.1.0">
+        <variable name="GEOLOCATION_USAGE_DESCRIPTION" value="O app precisa acessar seu GPS para registrar a localização das corridas" />
+    </plugin>
+    
+
+
+    <!-- Plugins para gerar arquivo temporário e abrir compartilhamento Android -->
+    <plugin name="cordova-plugin-file" spec="^8.1.3" />
+    <plugin name="cordova-plugin-android-permissions" spec="^1.1.5" />
+    <plugin name="cordova-plugin-x-socialsharing" spec="^6.0.4" />
+
+
+
+    <platform name="android">
+        <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+            <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+        </config-file>
+        <edit-config file="AndroidManifest.xml" mode="merge" target="/manifest/application">
+            <application android:requestLegacyExternalStorage="true" />
+        </edit-config>
+    </platform>
+
+    <!-- Ícone da Aplicação -->
+    <icon src="res/icon/android/icon.png" width="192" height="192" />
+    
+    <!-- Splash Screen -->
+    <splash src="res/screen/android/splash.png" width="320" height="480" />
+    
+</widget>

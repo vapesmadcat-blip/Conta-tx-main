@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DriverFlux - Sistema Integrado</title>
+    <style>
+        :root {
+            --bg-principal: #f4f6f9;
+            --card-bg: #ffffff;
+            --texto: #2d3748;
+            --texto-secundario: #718096;
+            --primary: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-principal); color: var(--texto); padding: 16px; display: flex; justify-content: center; }
+        .container-central { width: 100%; max-width: 500px; margin-top: 10px; }
+        
+        .card { background: var(--card-bg); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--texto); text-transform: uppercase; }
+        
+        .code-display { background: #edf2f7; border: 2px dashed var(--primary); padding: 15px; font-size: 22px; font-weight: 800; letter-spacing: 2px; text-align: center; border-radius: 12px; margin: 20px 0; }
+        
+        header { text-align: center; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        header h1 { font-size: 24px; font-weight: 800; color: var(--primary); }
+        .user-badge { background: #e0e7ff; color: var(--primary); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; margin-top: 4px; }
+
+        .btn-grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        button { border: none; padding: 12px 8px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease; }
+        button:active { transform: scale(0.97); }
+
+        .btn-incluir { background: var(--primary); color: white; }
+        .btn-consultar { background: #4b5563; color: white; }
+        .btn-totais { background: #6366f1; color: white; }
+        .btn-relatorio { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-logout { background: var(--danger); color: white; padding: 8px 14px; font-size: 12px; border-radius: 8px; font-weight: 700; }
+        .btn-cancel { background: #e2e8f0; color: var(--texto); width: 40%; }
+
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; color: var(--texto-secundario); margin-bottom: 4px; }
+        .input-group input, .input-group select { width: 100%; padding: 11px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; outline: none; background: white; }
+
+        .search-container { display: none; margin-bottom: 16px; }
+        .search-box { display: flex; gap: 8px; margin-bottom: 12px; }
+        .search-box input { flex: 1; padding: 12px; border: 2px solid var(--primary); border-radius: 10px; font-size: 15px; outline: none; }
+
+        .autocomplete-wrap { position: relative; flex: 1; }
+        .autocomplete-wrap input { width: 100%; }
+        .suggestion-box {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: calc(100% + 6px);
+            z-index: 50;
+            max-height: 190px;
+            overflow-y: auto;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.16);
+            padding: 6px;
+        }
+        .suggestion-item {
+            width: 100%;
+            text-align: left;
+            justify-content: flex-start;
+            background: #f8fafc;
+            color: #1e293b;
+            border-radius: 10px;
+            padding: 11px 12px;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .suggestion-item small { color: #64748b; font-weight: 600; margin-left: auto; }
+        .suggestion-empty { padding: 10px 12px; font-size: 13px; color: #64748b; }
+
+        .client-ledger-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; display: none; }
+        .ledger-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+        .ledger-row.balance { font-weight: 800; border-top: 1px dashed #cbd5e1; padding-top: 8px; margin-top: 8px; }
+
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px; font-size: 11px; color: var(--texto-secundario); border-bottom: 2px solid #edf2f7; text-transform: uppercase; }
+        td { padding: 12px 10px; font-size: 13px; border-bottom: 1px solid #edf2f7; }
+
+        .result-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .result-row.total-final { margin-top: 14px; padding-top: 14px; border-top: 2px dashed #e2e8f0; font-size: 17px; font-weight: 800; color: var(--primary); }
+        .danger-text { color: var(--danger); font-weight: 600; }
+        .success-text { color: var(--success); font-weight: 600; }
+
+
+        .driver-form-head { display:flex; align-items:center; gap:12px; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #e2e8f0; }
+        .driver-avatar { width:48px; height:48px; border-radius:16px; background:#e0e7ff; color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; }
+        .driver-subtitle { font-size:13px; color:var(--texto-secundario); margin-top:3px; line-height:1.35; }
+        .driver-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+        .driver-mini-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; }
+        .driver-mini-card label { color:#475569; }
+        .driver-help { background:#fffbeb; border:1px solid #fde68a; color:#92400e; border-radius:12px; padding:10px 12px; font-size:12px; font-weight:700; line-height:1.35; margin-top:4px; }
+        .driver-actions { display:flex; gap:10px; margin-top:18px; }
+        .driver-actions button { min-height:46px; }
+        .finance-note { background:#eef2ff; border:1px solid #c7d2fe; color:#3730a3; border-radius:12px; padding:10px 12px; font-size:12px; font-weight:800; line-height:1.35; margin-bottom:10px; }
+        .btn-secondary-clean { background:#e2e8f0; color:#334155; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: var(--card-bg); padding: 24px; border-radius: 20px; width: 100%; max-width: 460px; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        
+
+        .report-filter-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; margin-bottom:12px; }
+        .report-filter-title { font-size:13px; font-weight:900; color:#334155; margin-bottom:8px; }
+        .report-quick-buttons { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:10px; }
+        .report-quick-buttons button { background:#e0e7ff; color:#3730a3; font-weight:900; padding:10px 6px; }
+        .report-date-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .report-date-grid label { font-size:11px; font-weight:800; color:#64748b; display:block; margin-bottom:4px; }
+        .report-date-grid input { width:100%; padding:10px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; }
+        .report-filter-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+        .history-note { font-size:12px; color:#64748b; font-weight:700; margin: -4px 0 10px; }
+        .backup-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; margin-bottom:16px; }
+        .backup-box h2 { margin-bottom:8px; }
+        .backup-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .backup-help { font-size:12px; color:#64748b; font-weight:700; line-height:1.35; margin-bottom:10px; }
+
+        .report-output { display: none; }
+        .report-pro { background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; overflow:hidden; }
+        .report-head { background:linear-gradient(135deg, #4f46e5, #111827); color:white; padding:18px; }
+        .report-head h3 { font-size:20px; margin-bottom:4px; }
+        .report-head p { font-size:12px; opacity:.9; line-height:1.4; }
+        .report-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; }
+        .report-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:12px; }
+        .report-card .label { font-size:11px; color:#64748b; font-weight:800; text-transform:uppercase; margin-bottom:4px; }
+        .report-card .value { font-size:19px; font-weight:900; color:#1e293b; }
+        .report-card.primary { background:#eef2ff; border-color:#c7d2fe; }
+        .report-card.success { background:#ecfdf5; border-color:#bbf7d0; }
+        .report-card.danger { background:#fef2f2; border-color:#fecaca; }
+        .report-card.warning { background:#fffbeb; border-color:#fde68a; }
+        .report-section { padding:14px; border-top:1px solid #e2e8f0; }
+        .report-section h4 { font-size:14px; margin-bottom:10px; color:#334155; display:flex; justify-content:space-between; gap:8px; }
+        .report-list-row { display:flex; justify-content:space-between; align-items:center; gap:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:10px 12px; margin-bottom:8px; font-size:13px; }
+        .report-list-row strong { color:#0f172a; }
+        .report-list-row span { font-weight:900; color:#4f46e5; white-space:nowrap; }
+        .report-table { width:100%; border-collapse:separate; border-spacing:0 6px; }
+        .report-table th { font-size:10px; color:#64748b; padding:6px; border:none; }
+        .report-table td { background:#f8fafc; border:none; padding:9px 6px; font-size:12px; }
+        .report-toolbar { display:flex; gap:8px; margin-top:12px; }
+        .report-toolbar button { flex:1; }
+        @media print {
+            body { background:white; padding:0; }
+            body * { visibility:hidden; }
+            #cardRelatorio, #cardRelatorio * { visibility:visible; }
+            #cardRelatorio { display:block !important; position:absolute; left:0; top:0; width:100%; box-shadow:none; margin:0; border-radius:0; }
+            .no-print { display:none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-central">
+
+    <!-- TELAS INICIAIS (mantidas do original) -->
+    <div id="telaAtivacao" class="card" style="display: none; text-align: center;">
+        <h2>Ativação do Sistema</h2>
+        <div class="code-display" id="txtCodigoDesafio">------</div>
+        <div class="input-group" style="text-align: left;">
+            <label>Digite a Contra-Senha</label>
+            <input type="number" id="inputContraSenha" placeholder="Código de liberação">
+        </div>
+        <button id="btnAtivar" class="btn-incluir" style="width: 100%; margin-top: 15px;" onclick="verificarAtivacao()">🚀 Liberar Aplicativo</button>
+    </div>
+
+    <div id="telaLogin" class="card" style="display: none;">
+        <h2 style="text-align: center; margin-bottom: 15px;">Acesso ao Turno</h2>
+        <div class="input-group">
+            <label>Identificação / Motorista</label>
+            <input type="text" id="loginUsuario" placeholder="Ex: andre, pedro ou master" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>Senha de Acesso</label>
+            <input type="password" id="loginSenha" placeholder="******">
+        </div>
+        <button id="btnLogin" class="btn-incluir" style="width: 100%; margin-top: 10px;" onclick="realizarLogin()">🔑 Entrar no Sistema</button>
+    </div>
+
+    <div id="telaAberturaTurno" class="card" style="display: none;">
+        <h2>🟢 Abrir Turno e Caixa</h2>
+        <div class="input-group">
+            <label>💰 Dinheiro de Troco Inicial (R$)</label>
+            <input type="number" id="inputTrocoInicial" value="0.00" step="0.01">
+        </div>
+        <div class="input-group">
+            <label>🚗 Hodômetro Inicial (KM Atual do Painel)</label>
+            <input type="number" id="inputKmInicial" placeholder="Ex: 142350">
+        </div>
+        <button id="btnAbrirTurno" class="btn-incluir" style="width: 100%; padding: 15px; font-size: 16px; margin-top: 10px;" onclick="abrirTurnoOperacional()">Iniciar Trabalho</button>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div id="conteudoApp" style="display: none;">
+        <header>
+            <div>
+                <h1>DriverFlux</h1>
+                <span class="user-badge" id="lblUsuarioAtivo">Motorista: ---</span>
+                <div style="font-size: 11px; color: var(--texto-secundario); margin-top: 2px;" id="lblIdTurnoAtivo">Turno: ---</div>
+            </div>
+            <button class="btn-logout" onclick="efetuarLogout()">🚪 Sair</button>
+        </header>
+
+        <!-- PAINEL DO MASTER -->
+        <div id="painelFiltroMaster" class="card" style="display: none; background: #eff6ff; border: 1px solid #bfdbfe;">
+            <div class="input-group" style="margin-bottom: 0;">
+                <label style="color: var(--primary);">📋 Selecionar Turno para Auditoria:</label>
+                <select id="selectFiltroTurnoMaster" onchange="selecionarTurnoParaVerificacaoMaster()">
+                    <option value="">Carregando histórico de caixas...</option>
+                </select>
+            </div>
+            
+            <!-- BOTÃO DE CONSULTA AVANÇADA (ADICIONADO) -->
+            <button onclick="consultarMasterAvancado()" 
+                    style="width: 100%; margin: 12px 0; padding: 15px; background: #7c3aed; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 15px;">
+                🔎 Consulta Avançada (Cliente / Motorista / Prefixo)
+            </button>
+            
+            <button class="btn-relatorio" style="width: 100%; background: var(--primary);" onclick="cadastrarNovoMotoristaMaster()">👤 Cadastrar Novo Motorista</button>
+        </div>
+
+        <div class="btn-grid-actions">
+            <button class="btn-incluir" onclick="abrirModalEdicao(null)">➕ Incluir Corrida</button>
+            <button class="btn-relatorio" style="background:#f59e0b; color:white;" onclick="abrirModalDespesaTurno()">⛽ Despesa</button>
+            <button class="btn-consultar" onclick="alternarBarraConsulta()">🔍 Clientes / Pgto</button>
+            <button class="btn-totais" onclick="calcularTotais()">📊 Fechamento</button>
+            <button class="btn-relatorio" onclick="gerarRelatorio()">📄 Relatório</button>
+            <button class="btn-relatorio" style="background:#0f766e; color:white;" onclick="abrirRelatorioDespesas()">📋 Rel. Despesa</button>
+            <button class="btn-relatorio" style="background:#0369a1; color:white;" onclick="fazerBackupDriverFlux()">💾 Backup</button>
+            <button class="btn-relatorio" style="background:#475569; color:white;" onclick="abrirImportarBackupDriverFlux()">♻️ Restaurar</button>
+        </div>
+        <input type="file" id="inputBackupDriverFlux" accept="application/json,.json" style="display:none" onchange="restaurarBackupDriverFlux(event)">
+
+        <!-- BARRA DE PESQUISA DE CLIENTES -->
+        <div class="search-container" id="containerPesquisa">
+            <div class="search-box">
+                <div class="autocomplete-wrap">
+                    <input type="text" id="inputPesquisa" placeholder="Digite o cliente para pagar..." autocomplete="off" oninput="processarConsultaCliente()" onfocus="mostrarSugestoesPagamento()">
+                    <div id="listaClientesPagamento" class="suggestion-box"></div>
+                </div>
+                <button onclick="limparConsulta()" style="background:#e2e8f0; padding:0 10px; border-radius:10px;">X</button>
+            </div>
+            <div class="client-ledger-box" id="fichaCliente">
+                <h3 id="ledgerNomeCliente" style="font-size:14px; color:var(--primary); margin-bottom:8px;">Extrato</h3>
+                <div class="ledger-row"><span>Acumulado no Crédito:</span> <span id="ledgerTotalDevido">R$ 0,00</span></div>
+                <div class="ledger-row"><span>Total Amortizado:</span> <span id="ledgerTotalPago" class="success-text">R$ 0,00</span></div>
+                <div class="ledger-row balance"><span>Saldo Pendente:</span> <span id="ledgerSaldoFinal">R$ 0,00</span></div>
+                <div style="display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                    <input type="number" step="0.01" id="inputValorPagamento" placeholder="Valor pago (R$)" style="flex:1; padding:8px; border:1px solid #cbd5e1; border-radius:8px;">
+                    <button class="btn-relatorio" style="padding:8px 12px;" onclick="registrarPagamento()">Amortizar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA DE CORRIDAS -->
+        <div class="card">
+            <h2 id="tituloTabela">Últimas 10 corridas</h2>
+            <div class="history-note">Mais recentes primeiro. O relatório continua considerando o período selecionado.</div>
+            <div class="table-wrapper">
+                <table id="tabelaDados">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Info</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CARD DE FECHAMENTO (COM BOTÃO CANCELAR) -->
+        <div class="card" id="cardTotais" style="display: none;">
+            <h2>Resumo Financeiro Calculado</h2>
+            <div class="result-row"><span>Fundo/Troco Inicial:</span> <span id="totTrocoInicial">R$ 0,00</span></div>
+            <div class="result-row"><span>Corridas Normais (Dinheiro):</span> <span id="totNormais" class="success-text">R$ 0,00</span></div>
+            <div class="result-row"><span>Corridas no Crédito:</span> <span id="totCorridasCredito">R$ 0,00</span></div>
+            <div class="result-row"><span>Dinheiro Emprestado:</span> <span id="totBruto">R$ 0,00</span></div>
+            <div class="result-row"><span>Taxa do Ponto (+20%):</span> <span id="totAcrescimo" class="danger-text">+ R$ 0,00</span></div>
+            <div class="result-row total-final"><span>Dinheiro Vivo Esperado:</span> <span id="totGeral">R$ 0,00</span></div>
+
+            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed #cbd5e1;">
+                <h2 style="margin-bottom:10px;">Despesas do Turno</h2>
+                <div class="result-row"><span>Gasolina:</span> <span id="totDespesaGasolina" class="danger-text">R$ 0,00</span></div>
+                <div class="result-row"><span>Manutenção:</span> <span id="totDespesaManutencao" class="danger-text">R$ 0,00</span></div>
+                <div class="result-row"><span>Outras despesas:</span> <span id="totDespesaOutros" class="danger-text">R$ 0,00</span></div>
+                <div class="result-row total-final"><span>Total de Despesas:</span> <span id="totDespesas">R$ 0,00</span></div>
+            </div>
+
+            <div style="margin-top:16px; padding-top:14px; border-top:1px dashed #cbd5e1;">
+                <h2 style="margin-bottom:10px;">Acerto Motorista / Dono</h2>
+                <div class="finance-note" id="labelRegimeMotorista">Regime não informado</div>
+                <div class="input-group" id="boxKmFechamento" style="display:none;">
+                    <label>🚗 Hodômetro Final</label>
+                    <input type="number" id="inputKmFinalFechamento" placeholder="KM no encerramento" oninput="calcularAcertoMotoristaFechamento()">
+                </div>
+                <div class="result-row"><span>Resumo do acerto:</span> <span id="totResumoAcerto" style="text-align:right; max-width:60%; font-weight:800;">-</span></div>
+                <div class="result-row"><span>Motorista fica/recebe:</span> <span id="totValorMotorista" class="success-text">R$ 0,00</span></div>
+                <div class="result-row"><span>Dono do carro:</span> <span id="totValorDono" class="success-text">R$ 0,00</span></div>
+                <div class="result-row"><span>Líquido após despesas:</span> <span id="totLiquidoAposDespesas">R$ 0,00</span></div>
+            </div>
+            
+            <!-- BOTÕES DE FECHAMENTO (COM CANCELAR) -->
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-danger" id="btnFecharTurnoOficial" style="flex: 1; padding: 14px;" onclick="encerrarTurnoDefinitivo()">
+                    🔴 Encerrar Turno e Fechar Caixa
+                </button>
+                <button onclick="cancelarFechamento()" style="flex: 1; padding: 14px; background: #64748b; color: white; border: none; border-radius: 10px; font-weight: 600;">
+                    ❌ Cancelar / Voltar
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="cardRelatorio" style="display: none;">
+            <h2>Relatório Profissional de Turno</h2>
+            <div class="report-filter-box no-print">
+                <div class="report-filter-title">📅 Período do relatório</div>
+                <div class="report-quick-buttons">
+                    <button type="button" onclick="aplicarPeriodoRelatorio(7)">7 dias</button>
+                    <button type="button" onclick="aplicarPeriodoRelatorio(15)">15 dias</button>
+                    <button type="button" onclick="aplicarPeriodoRelatorio(30)">30 dias</button>
+                </div>
+                <div class="report-date-grid">
+                    <div>
+                        <label>Data inicial</label>
+                        <input type="date" id="relDataInicial">
+                    </div>
+                    <div>
+                        <label>Data final</label>
+                        <input type="date" id="relDataFinal">
+                    </div>
+                </div>
+                <div class="report-filter-actions">
+                    <button type="button" class="btn-relatorio" onclick="gerarRelatorio()">Gerar relatório</button>
+                    <button type="button" style="background:#e2e8f0; color:#334155;" onclick="limparPeriodoRelatorio()">Tudo</button>
+                </div>
+            </div>
+            <div class="report-output" id="reportOutput"></div>
+            <div class="report-toolbar no-print">
+                <button class="btn-relatorio" onclick="imprimirRelatorioPDF()">🖨️ Imprimir / PDF</button>
+                <button class="btn-relatorio" style="background:#0f766e; color:white;" onclick="salvarRelatorioComoArquivo()">💾 Salvar Relatório</button>
+                <button style="background:#64748b; color:white;" onclick="fecharRelatorioProfissional()">Fechar</button>
+            </div>
+        </div>
+
+        <div class="card" id="cardRelatorioDespesas" style="display: none;">
+            <h2>Relatório de Despesas por Prefixo</h2>
+            <div class="report-filter-box no-print">
+                <div class="report-filter-title">🚖 Prefixo do carro</div>
+                <div class="report-date-grid">
+                    <div>
+                        <label>Prefixo / placa</label>
+                        <input type="text" id="relDespesaPrefixo" placeholder="Ex: TX-024">
+                    </div>
+                    <div>
+                        <label>Período rápido</label>
+                        <div class="report-quick-buttons">
+                            <button type="button" onclick="aplicarPeriodoRelatorioDespesa(7)">7 dias</button>
+                            <button type="button" onclick="aplicarPeriodoRelatorioDespesa(15)">15 dias</button>
+                            <button type="button" onclick="aplicarPeriodoRelatorioDespesa(30)">30 dias</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="report-date-grid">
+                    <div>
+                        <label>Data inicial</label>
+                        <input type="date" id="relDespesaDataInicial">
+                    </div>
+                    <div>
+                        <label>Data final</label>
+                        <input type="date" id="relDespesaDataFinal">
+                    </div>
+                </div>
+                <div class="report-filter-actions">
+                    <button type="button" class="btn-relatorio" onclick="gerarRelatorioDespesas()">Gerar despesas</button>
+                    <button type="button" style="background:#e2e8f0; color:#334155;" onclick="limparPeriodoRelatorioDespesa()">Tudo</button>
+                </div>
+            </div>
+            <div class="report-output" id="reportDespesasOutput"></div>
+            <div class="report-toolbar no-print">
+                <button class="btn-relatorio" onclick="salvarRelatorioDespesasPDF()">💾 Salvar Rel. Despesas</button>
+                <button class="btn-relatorio" onclick="copiarRelatorioDespesas()">📋 Copiar</button>
+                <button style="background:#64748b; color:white;" onclick="fecharRelatorioDespesas()">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE LANÇAR CORRIDA -->
+<div class="modal" id="formModal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Lançar Corrida</h3>
+        <input type="hidden" id="editId">
+        
+        <div class="input-group">
+            <label for="inputTipoLancamento">Modalidade da Corrida</label>
+            <select id="inputTipoLancamento" onchange="ajustarCamposPorModalidade()">
+                <option value="normal" selected>🟢 Corrida Normal (Paga na Hora)</option>
+                <option value="credito">🟡 Corrida no Crédito (Fiado/Pendência)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="inputCorrida">Valor da Corrida (R$)</label>
+            <input type="number" step="0.01" id="inputCorrida" placeholder="0,00">
+        </div>
+
+        <div id="camposCreditoOpcionais" style="display: none; background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 14px; border: 1px solid #e2e8f0;">
+            <div class="input-group">
+                <label for="inputCliente">Nome do Cliente</label>
+                <input type="text" id="inputCliente" placeholder="Quem vai dever?" list="listaClientes" autocomplete="off">
+                <datalist id="listaClientes"></datalist>
+            </div>
+            <div class="input-group">
+                <label for="inputWhatsCliente">📱 WhatsApp do Cliente Novo (Com DDD)</label>
+                <input type="number" id="inputWhatsCliente" placeholder="Ex: 51999998888">
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+                <label for="inputEmprestimo">Adicionar Dinheiro Emprestado (R$)</label>
+                <input type="number" step="0.01" id="inputEmprestimo" value="0">
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="btn-cancel" onclick="fecharModal()">Voltar</button>
+            <button id="btnConfirmarSalvar" class="btn-incluir" style="flex: 1;" onclick="salvarDados()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL DE CADASTRO DE MOTORISTA -->
+<div class="modal" id="modalCadastroMotorista">
+    <div class="modal-content">
+        <div class="driver-form-head">
+            <div class="driver-avatar">👤</div>
+            <div>
+                <h3 style="font-size:18px; margin:0;">Cadastrar Motorista</h3>
+                <div class="driver-subtitle">Crie o acesso do motorista de forma rápida, sem prompts e sem digitar códigos soltos.</div>
+            </div>
+        </div>
+
+        <div class="driver-grid">
+            <div class="driver-mini-card input-group">
+                <label for="novoMotoristaUsuario">Nome de usuário</label>
+                <input type="text" id="novoMotoristaUsuario" placeholder="Ex: andre, joao, carro12" autocomplete="off">
+            </div>
+
+            <div class="driver-mini-card input-group">
+                <label for="novoMotoristaSenha">Senha de acesso</label>
+                <input type="password" id="novoMotoristaSenha" placeholder="Digite a senha do motorista">
+            </div>
+
+            <div class="driver-mini-card input-group">
+                <label for="novoMotoristaTipo">Tipo de contrato</label>
+                <select id="novoMotoristaTipo" onchange="atualizarCamposTipoPagamentoMotorista()">
+                    <option value="comissionado">Comissionado</option>
+                    <option value="quilometragem">Paga por quilometragem ao dono</option>
+                </select>
+            </div>
+
+            <div class="driver-mini-card input-group" id="boxComissaoMotorista">
+                <label for="novoMotoristaComissao">Comissão do motorista (%)</label>
+                <input type="number" step="0.01" id="novoMotoristaComissao" placeholder="Ex: 30">
+            </div>
+
+            <div class="driver-mini-card input-group" id="boxValorKmMotorista" style="display:none;">
+                <label for="novoMotoristaValorKm">Valor por KM pago ao dono do carro (R$)</label>
+                <input type="number" step="0.01" id="novoMotoristaValorKm" placeholder="Ex: 1.20">
+            </div>
+
+            <div class="driver-mini-card input-group">
+                <label for="novoMotoristaPrefixo">Prefixo / carro padrão</label>
+                <input type="text" id="novoMotoristaPrefixo" placeholder="Opcional. Ex: TX-024">
+            </div>
+        </div>
+
+        <div class="driver-help">
+            Dica: em comissionado, o fechamento calcula quanto o motorista recebe. Por quilometragem, o fechamento usa hodômetro inicial/final para calcular quanto o motorista paga ao dono do carro.
+        </div>
+
+        <div class="driver-actions">
+            <button class="btn-secondary-clean" style="flex:1;" onclick="fecharModalCadastroMotorista()">Cancelar</button>
+            <button class="btn-incluir" style="flex:1.4;" onclick="salvarNovoMotoristaMaster()">✅ Salvar Motorista</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- MODAL DE DESPESA DO TURNO -->
+<div class="modal" id="modalDespesaTurno">
+    <div class="modal-content">
+        <div class="driver-form-head">
+            <div class="driver-avatar">⛽</div>
+            <div>
+                <h3 style="font-size:18px; margin:0;">Lançar Despesa do Turno</h3>
+                <div class="driver-subtitle">Use para gasolina, manutenção ou outra despesa feita durante o turno do carro.</div>
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Tipo de despesa</label>
+            <select id="inputDespesaTipo">
+                <option value="gasolina">Gasolina / combustível</option>
+                <option value="manutencao">Manutenção</option>
+                <option value="outros">Outros</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Valor (R$)</label>
+            <input type="number" step="0.01" id="inputDespesaValor" placeholder="0,00">
+        </div>
+        <div class="input-group">
+            <label>Descrição opcional</label>
+            <input type="text" id="inputDespesaDescricao" placeholder="Ex: posto, óleo, pneu, lavagem">
+        </div>
+        <div class="driver-actions">
+            <button class="btn-secondary-clean" style="flex:1;" onclick="fecharModalDespesaTurno()">Cancelar</button>
+            <button class="btn-incluir" style="flex:1.4;" onclick="salvarDespesaTurno()">✅ Salvar Despesa</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="cordova.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="js/pdf-driverflux-fallback.js"></script>
+
+<script src="js/geolocation.js"></script>
+<script src="js/master/config-master.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
