@@ -1,0 +1,65 @@
+name: Build Android APK - DriverFlux Release
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+  ANDROID_HOME: /usr/local/lib/android/sdk
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Código
+      uses: actions/checkout@v4
+
+    - name: Configurar Java JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Instalar Dependências
+      run: |
+        npm install -g cordova
+        npm install
+
+    - name: Adicionar Plataforma Android
+      run: cordova platform add android --no-telemetry --verbose
+
+    - name: Preparar Plugins (File + SocialSharing) e Plataforma
+      run: cordova prepare android --no-telemetry --verbose
+
+    - name: Gerar Keystore
+      run: |
+        echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+
+    - name: Compilar APK Release Assinado
+      run: |
+        cordova build android --release --verbose \
+          -- \
+          --keystore=release.keystore \
+          --storePassword="${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" \
+          --alias="${{ secrets.RELEASE_KEY_ALIAS }}" \
+          --password="${{ secrets.RELEASE_KEY_PASSWORD }}" \
+          --packageType=apk
+
+    - name: Disponibilizar APK Release para Download
+      uses: actions/upload-artifact@v4
+      with:
+        name: DriverFlux-APK-Release-Assinado
+        path: platforms/android/app/build/outputs/apk/release/app-release.apk
+        retention-days: 30
+
+    - name: Status Final
+      if: always()
+      run: echo "✅ Build release assinado concluído! APK disponível na aba Artifacts"
